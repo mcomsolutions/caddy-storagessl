@@ -195,3 +195,23 @@ func TestNats_Stat(t *testing.T) {
 
 	A.Stat(ctx, "victor")
 }
+
+func TestNats_List(t *testing.T) {
+	A := new(StorageParam)
+	A.Host = "127.0.0.1"
+	A.Port = "9582"
+	A.DataBaseName = "mcom_adnud_dev"
+	A.Timeout = 5
+	A.AccessKey = "w9AFS267JWPTQkjfYXQMUTEg22BmmbfQ"
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	bln, e := A.List(ctx, "certificates/", false)
+	if e != nil {
+		fmt.Println(e)
+	}
+	for _, v := range bln {
+		fmt.Println(v)
+	}
+
+}

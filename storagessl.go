@@ -125,6 +125,8 @@ func (rd *StorageParam) Exists(ctx context.Context, key string) bool {
 
 // List returns all keys that match prefix.
 func (rd *StorageParam) List(ctx context.Context, prefix string, recursive bool) ([]string, error) {
+	var ListCert []string
+
 	form := url.Values{}
 	form.Add("prefix", prefix)
 	form.Add("recursive", strconv.FormatBool(recursive))
@@ -136,15 +138,20 @@ func (rd *StorageParam) List(ctx context.Context, prefix string, recursive bool)
 
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("access_key", rd.AccessKey)
-	r.Header.Add("command", "exists")
+	r.Header.Add("command", "list")
 	client := &http.Client{}
-	_, err := client.Do(r)
+	re, err := client.Do(r)
 
 	if err != nil {
 		return nil, err
 	}
-
-	return nil, nil
+	defer re.Body.Close()
+	body, e1 := ioutil.ReadAll(re.Body)
+	if e1 != nil {
+		return nil, e1
+	}
+	e2 := json.Unmarshal(body, &ListCert)
+	return ListCert, e2
 }
 
 // Stat returns information about key.
@@ -174,4 +181,48 @@ func (rd *StorageParam) Stat(ctx context.Context, key string) (certmagic.KeyInfo
 	}
 	json.Unmarshal(body, &result)
 	return result, nil
+}
+
+func (rd *StorageParam) Lock(ctx context.Context, key string) error {
+	form := url.Values{}
+	form.Add("key", key)
+	form.Add("database", rd.DataBaseName)
+
+	Server := fmt.Sprintf("http://%s:%s/cm/sslstorage", rd.Host, rd.Port)
+	r, _ := http.NewRequest("POST", Server, strings.NewReader(form.Encode()))
+	r = r.WithContext(ctx)
+
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("access_key", rd.AccessKey)
+	r.Header.Add("command", "lock")
+	client := &http.Client{}
+	Response, err := client.Do(r)
+	if err != nil {
+		return err
+	} else if Response.StatusCode == 200 {
+		return nil
+	}
+	return errors.New("not lock: " + key)
+}
+
+func (rd *StorageParam) Unlock(ctx context.Context, key string) error {
+	form := url.Values{}
+	form.Add("key", key)
+	form.Add("database", rd.DataBaseName)
+
+	Server := fmt.Sprintf("http://%s:%s/cm/sslstorage", rd.Host, rd.Port)
+	r, _ := http.NewRequest("POST", Server, strings.NewReader(form.Encode()))
+	r = r.WithContext(ctx)
+
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("access_key", rd.AccessKey)
+	r.Header.Add("command", "unlock")
+	client := &http.Client{}
+	Response, err := client.Do(r)
+	if err != nil {
+		return err
+	} else if Response.StatusCode == 200 {
+		return nil
+	}
+	return errors.New("not unlock: " + key)
 }
