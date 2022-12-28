@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -41,9 +42,8 @@ func (rd *StorageParam) Store(ctx context.Context, key string, value []byte) err
 
 	if err != nil {
 		return err
-	}
-	if Response.StatusCode == 404 {
-		return errors.New("Error on store certs")
+	} else if Response.StatusCode == 404 {
+		return errors.New("error on store certs")
 	}
 	return nil
 }
@@ -67,7 +67,9 @@ func (rd *StorageParam) Load(ctx context.Context, key string) ([]byte, error) {
 		return nil, err
 	}
 	if Response.StatusCode == 404 {
-		return nil, errors.New("Error on load certs")
+		return nil, fs.ErrNotExist
+	} else if Response.StatusCode == 501 {
+		return nil, errors.New("error on load certs")
 	}
 	buffer, err := io.ReadAll(Response.Body)
 
@@ -91,9 +93,8 @@ func (rd *StorageParam) Delete(ctx context.Context, key string) error {
 	Response, err := client.Do(r)
 	if err != nil {
 		return err
-	}
-	if Response.StatusCode == 404 {
-		return errors.New("Error on load certs")
+	} else if Response.StatusCode == 404 {
+		return fs.ErrNotExist
 	}
 	return nil
 }
@@ -191,8 +192,7 @@ func (rd *StorageParam) Lock(ctx context.Context, key string) error {
 	Response, err := client.Do(r)
 	if err != nil {
 		return err
-	}
-	if Response.StatusCode == 200 {
+	} else if Response.StatusCode == 200 {
 		return nil
 	}
 	return errors.New("not lock: " + key)
@@ -214,8 +214,7 @@ func (rd *StorageParam) Unlock(ctx context.Context, key string) error {
 	Response, err := client.Do(r)
 	if err != nil {
 		return err
-	}
-	if Response.StatusCode == 200 {
+	} else if Response.StatusCode == 200 {
 		return nil
 	}
 	return errors.New("not unlock: " + key)
