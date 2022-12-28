@@ -66,7 +66,6 @@ func (rd *StorageParam) Load(ctx context.Context, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	rd.Logger.Sugar().Infof("El status code que recibo es: %d", Response.StatusCode)
 	if Response.StatusCode == 404 {
 		return nil, fs.ErrNotExist
 	} else if Response.StatusCode == 501 {

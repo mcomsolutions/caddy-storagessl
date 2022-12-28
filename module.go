@@ -50,7 +50,6 @@ func (rd *StorageParam) GetConfigValue() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
 	rd.Logger = logger
-	rd.Logger.Info("Estoy en la funcion GetConfigValue. Esta funcion se tiene que recodificar")
 
 	rd.Host = configureString(rd.Host, EnvNameHost, DefaultHost)
 	rd.Port = configureString(rd.Port, EnvNamePort, DefaultPort)
